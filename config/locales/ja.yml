@@ -1,0 +1,80 @@
+ja:
+  activerecord:
+    models:
+      employee: 従業員
+      department: 部署
+      visit: 訪問
+      admin_user: 管理者ユーザー
+      sync_log: 同期ログ
+    
+    attributes:
+      employee:
+        name: 名前
+        email: メールアドレス
+        slack_user_id: Slack User ID
+        department: 部署
+        is_active: 有効状態
+        visible_to_visitors: 受付画面に表示
+        avatar_url: アバターURL
+        smarthr_id: SmartHR ID
+      department:
+        name: 部署名
+        position: 表示順
+      visit:
+        employee: 従業員
+        notes: メモ
+        status: ステータス
+        slack_message_ts: Slackメッセージタイムスタンプ
+      admin_user:
+        email: メールアドレス
+        name: 名前
+        password: パスワード
+        password_confirmation: パスワード（確認）
+      sync_log:
+        service: サービス
+        status: ステータス
+        details: 詳細
+        error_message: エラーメッセージ
+        synced_at: 同期日時
+    
+    errors:
+      models:
+        employee:
+          attributes:
+            slack_user_id:
+              invalid: は英数字（大文字）とアンダースコアのみ使用できます
+        admin_user:
+          attributes:
+            password:
+              too_short: は%{count}文字以上で入力してください
+  
+  errors:
+    messages:
+      record_invalid: "バリデーションに失敗しました: %{errors}"
+      restrict_dependent_destroy:
+        has_many: "%{record}が存在しているので削除できません"
+        has_one: "%{record}が存在しているので削除できません"
+  
+  date:
+    formats:
+      default: "%Y年%m月%d日"
+      short: "%m/%d"
+      long: "%Y年%m月%d日(%a)"
+    
+    day_names: [日曜日, 月曜日, 火曜日, 水曜日, 木曜日, 金曜日, 土曜日]
+    abbr_day_names: [日, 月, 火, 水, 木, 金, 土]
+    month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
+    abbr_month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
+    order:
+      - :year
+      - :month
+      - :day
+  
+  time:
+    formats:
+      default: "%Y年%m月%d日 %H:%M"
+      short: "%m/%d %H:%M"
+      long: "%Y年%m月%d日(%a) %H:%M:%S"
+    am: "午前"
+    pm: "午後"
+

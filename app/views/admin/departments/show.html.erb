@@ -1,0 +1,102 @@
+<div class="max-w-7xl mx-auto">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900"><%= @department.name %></h1>
+      <p class="text-gray-600 mt-1">部署詳細</p>
+    </div>
+    <div class="flex gap-3">
+      <%= link_to "編集", 
+          edit_admin_department_path(@department), 
+          class: "px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" %>
+      <%= link_to "一覧に戻る", 
+          admin_departments_path, 
+          class: "px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors" %>
+    </div>
+  </div>
+
+  <!-- 部署情報 -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">部署情報</h2>
+    <div class="grid grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">部署名</label>
+        <div class="text-gray-900"><%= @department.name %></div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">表示順</label>
+        <div class="text-gray-900"><%= @department.position %></div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">所属従業員数</label>
+        <div class="text-gray-900">
+          <%= @department.total_employees_count %> 名
+          <span class="text-sm text-gray-500">（有効: <%= @department.active_employees_count %> 名）</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 所属従業員一覧 -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900">所属従業員</h2>
+    </div>
+    
+    <% if @employees.any? %>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名前</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">メールアドレス</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @employees.each do |employee| %>
+            <tr class="<%= 'bg-gray-50' unless employee.is_active %>">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900"><%= employee.name %></div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900"><%= employee.email %></div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex flex-col gap-1">
+                  <% if employee.is_active %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      有効
+                    </span>
+                  <% else %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                      無効
+                    </span>
+                  <% end %>
+                  
+                  <% if employee.visible_to_visitors %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                      受付表示
+                    </span>
+                  <% end %>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <%= link_to "詳細", admin_employee_path(employee), class: "text-blue-600 hover:text-blue-900" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="p-12 text-center">
+        <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <p class="text-gray-500 text-lg">所属従業員がいません</p>
+      </div>
+    <% end %>
+  </div>
+</div>
+

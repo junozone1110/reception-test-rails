@@ -1,0 +1,56 @@
+<div class="max-w-2xl mx-auto">
+  <div class="mb-8">
+    <%= link_to "← 戻る", root_path, class: "text-blue-600 hover:text-blue-800" %>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-md p-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">訪問確認</h1>
+
+    <!-- 従業員情報 -->
+    <div class="bg-blue-50 rounded-lg p-6 mb-6">
+      <div class="flex items-center">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold mr-4">
+          <%= @employee.name[0] %>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900"><%= @employee.name %></h2>
+          <p class="text-gray-600"><%= @employee.department.name %></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 訪問フォーム -->
+    <%= form_with model: @visit, url: visits_path, class: "space-y-6" do |f| %>
+      <%= f.hidden_field :employee_id, value: @employee.id %>
+
+      <% if @visit.errors.any? %>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 class="text-red-800 font-semibold mb-2">エラーが発生しました</h3>
+          <ul class="list-disc list-inside text-red-700">
+            <% @visit.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.label :notes, "メモ（任意）", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <%= f.text_area :notes, 
+            rows: 4,
+            placeholder: "用件や伝言などがあれば入力してください",
+            class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+        <p class="mt-1 text-sm text-gray-500">このメモはSlackで従業員に送信されます</p>
+      </div>
+
+      <div class="flex gap-4">
+        <%= f.submit "通知を送信", 
+            class: "flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg" %>
+        <%= link_to "キャンセル", 
+            root_path, 
+            class: "px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
