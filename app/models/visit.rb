@@ -2,7 +2,12 @@ class Visit < ApplicationRecord
   belongs_to :employee
 
   # ステータス定義
-  enum :status, { pending: "pending", acknowledged: "acknowledged" }, prefix: true
+  enum :status, {
+    pending: "pending",
+    going_now: "going_now",        # すぐ行きます
+    waiting: "waiting",             # お待ちいただく
+    no_match: "no_match"            # 心当たりがない
+  }, prefix: true
 
   validates :status, presence: true
   validates :employee, presence: true
@@ -13,12 +18,24 @@ class Visit < ApplicationRecord
   scope :this_week, -> { where("created_at >= ?", Time.zone.now.beginning_of_week) }
 
   # ステータス確認メソッド
-  def acknowledged?
-    status == "acknowledged"
-  end
-
   def pending?
     status == "pending"
+  end
+
+  def going_now?
+    status == "going_now"
+  end
+
+  def waiting?
+    status == "waiting"
+  end
+
+  def no_match?
+    status == "no_match"
+  end
+
+  def responded?
+    !pending?
   end
 
   # 表示用メソッド

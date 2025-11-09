@@ -4,7 +4,9 @@
 module AppConfig
   # Slack関連
   module Slack
-    ACTION_ACKNOWLEDGE_VISIT = "acknowledge_visit"
+    ACTION_GOING_NOW = "going_now"           # すぐ行きます
+    ACTION_WAITING = "waiting"               # お待ちいただく
+    ACTION_NO_MATCH = "no_match"             # 心当たりがない
     PAYLOAD_TYPE_BLOCK_ACTIONS = "block_actions"
   end
 

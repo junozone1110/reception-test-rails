@@ -148,6 +148,7 @@ rails server
 # Slack設定
 SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
 SLACK_SIGNING_SECRET=your-slack-signing-secret
+SLACK_CHANNEL_ID=C1234567890  # 通知を送信するPublicチャネルのID
 
 # SmartHR API設定（オプション）
 SMARTHR_SUBDOMAIN=your-company
@@ -162,11 +163,40 @@ DATABASE_URL=mysql2://root:password@localhost:3306/reception_rails_development
 1. [Slack App](https://api.slack.com/apps)でアプリを作成
 2. OAuth & Permissions → Scopes:
    - `chat:write` - メッセージ送信
-   - `im:write` - DM送信
+   - `chat:write.public` - パブリックチャネルへのメッセージ送信
+   - `channels:read` - チャネル情報の読み取り（チャネルID取得用）
 3. Install App to Workspace → Bot Token取得
 4. Basic Information → Signing Secret取得
 5. Interactivity & Shortcuts:
-   - Request URL: `https://your-domain.com/slack/actions`
+   - **Interactivity** をONにする
+   - **Request URL** を設定（開発環境の場合、下記のトンネルURLを使用）
+6. **チャネルIDの取得方法**:
+   - Slackでチャネルを開く
+   - チャネル名を右クリック → 「リンクをコピー」
+   - URLからチャネルIDを抽出（例: `https://workspace.slack.com/archives/C1234567890` → `C1234567890`）
+   - または、チャネル名の横の「...」→「チャネルの詳細」→「チャネルID」をコピー
+
+#### 開発環境でのインタラクティブURL設定
+
+開発環境では、ローカルサーバーを公開するためにトンネルが必要です：
+
+**Cloudflare Tunnelを使用する場合（推奨）:**
+
+```bash
+# 別のターミナルで実行
+cloudflared tunnel --url http://localhost:3000
+```
+
+表示されるURL（例: `https://abc-def-ghi.trycloudflare.com`）をコピーして、Slack Appの設定で以下のように設定：
+
+```
+https://abc-def-ghi.trycloudflare.com/slack/actions
+```
+
+⚠️ **重要**: 
+- URLの末尾に必ず `/slack/actions` を付けてください
+- トンネルを起動した後、Slack Appの設定で「Save Changes」をクリックすると、緑のチェックマークが表示されます
+- トンネルを再起動するとURLが変わるため、その都度Slack Appの設定を更新する必要があります
 
 #### SmartHR設定の取得方法
 
@@ -272,7 +302,7 @@ DATABASE_URL=mysql2://root:password@localhost:3306/reception_rails_development
 - SmartHRからの内部名を対外名に変更可能
 
 #### visits（訪問）
-- `status`: pending（未確認）/ acknowledged（確認済み）
+- `status`: pending（未確認）/ going_now（すぐ行きます）/ waiting（お待ちいただく）/ no_match（心当たりがない）
 - `slack_message_ts`: Slackメッセージの特定用
 
 #### sync_logs（同期ログ）
@@ -288,10 +318,10 @@ DATABASE_URL=mysql2://root:password@localhost:3306/reception_rails_development
 **フロー**:
 1. 訪問者が担当者を選択
 2. `SlackNotificationJob`がバックグラウンドで実行
-3. `SlackNotifier`が担当者のSlack IDにDM送信
-4. メッセージにインタラクティブボタン付与
-5. 担当者が「確認済み」ボタンをクリック
-6. `SlackActionsController`がステータス更新
+3. `SlackNotifier`がPublicチャネルに通知を送信
+4. メッセージに3つのインタラクティブボタン付与（「すぐ行きます」「お待ちいただく」「心当たりがない」）
+5. 担当者がボタンをクリック
+6. `SlackActionsController`がステータス更新し、メッセージを更新
 
 **実装**:
 - `app/services/slack_notifier.rb`
