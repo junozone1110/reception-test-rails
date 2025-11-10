@@ -19,7 +19,7 @@ module Slack
 
     def build_plain_text
       if @visit.responded?
-        "#{@employee.name}さんへの来客 - #{status_text}"
+        "#{@employee.name}さんへの来客 - #{@visit.status_text}"
       else
         "#{@employee.name}さんへの来客があります"
       end
@@ -116,22 +116,9 @@ module Slack
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "#{@responder}さんが #{formatted_time} に「#{status_text}」ボタンを押しました。"
+          text: "#{@responder}さんが #{formatted_time} に「#{@visit.status_text}」ボタンを押しました。"
         }
       }
-    end
-
-    def status_text
-      case @visit.status
-      when "going_now"
-        "すぐ行きます"
-      when "waiting"
-        "お待ちいただく"
-      when "no_match"
-        "心当たりがない"
-      else
-        "確認済み"
-      end
     end
 
     def formatted_time

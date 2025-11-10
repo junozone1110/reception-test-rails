@@ -14,7 +14,7 @@ class SlackNotificationJob < ApplicationJob
     Rails.logger.info "Starting Slack notification job for visit ##{visit_id}"
     
     # Slack通知をスキップする条件（開発時など）
-    if ENV["SLACK_BOT_TOKEN"].blank?
+    unless AppConfig::Slack.bot_token?
       Rails.logger.warn "Skipping Slack notification: SLACK_BOT_TOKEN not configured"
       return
     end

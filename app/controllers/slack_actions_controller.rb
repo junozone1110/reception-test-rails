@@ -28,6 +28,12 @@ class SlackActionsController < ApplicationController
     Rails.logger.error "JSON parse error: #{e.message}"
     Rails.logger.error "Request body: #{request.body.read rescue 'N/A'}"
     render json: { text: "不正なペイロード" }, status: :bad_request
+  rescue SlackSignatureVerifier::VerificationError => e
+    Rails.logger.error "Slack signature verification failed: #{e.message}"
+    render json: { error: e.message }, status: :unauthorized
+  rescue SlackSignatureError => e
+    Rails.logger.error "Slack signature error: #{e.message}"
+    render json: { error: e.message }, status: :unauthorized
   rescue => e
     Rails.logger.error "Slack action error: #{e.class.name} - #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
@@ -37,45 +43,12 @@ class SlackActionsController < ApplicationController
   private
 
   def verify_slack_request
-    # 開発環境では署名検証をスキップ（デバッグ用）
-    if Rails.env.development?
-      Rails.logger.info "⚠️  Development mode: Skipping Slack signature verification"
-      return true
-    end
-
-    # 本番環境での署名検証
-    return true unless ENV["SLACK_SIGNING_SECRET"].present?
-
-    timestamp = request.headers["X-Slack-Request-Timestamp"]
-    slack_signature = request.headers["X-Slack-Signature"]
-
-    Rails.logger.info "Verifying Slack request - Timestamp: #{timestamp}, Signature: #{slack_signature}"
-
-    # タイムスタンプチェック（リプレイアタック対策）
-    if timestamp.nil? || (Time.now.to_i - timestamp.to_i).abs > 60 * 5
-      Rails.logger.warn "❌ Slack request timestamp is too old or missing"
-      render json: { error: "Invalid timestamp" }, status: :unauthorized
-      return false
-    end
-
-    # 署名の検証
-    request.body.rewind
-    body = request.body.read
-    sig_basestring = "v0:#{timestamp}:#{body}"
-    my_signature = "v0=" + OpenSSL::HMAC.hexdigest("SHA256", ENV["SLACK_SIGNING_SECRET"], sig_basestring)
-
-    Rails.logger.info "Expected signature: #{my_signature}"
-    Rails.logger.info "Received signature: #{slack_signature}"
-
-    unless ActiveSupport::SecurityUtils.secure_compare(my_signature, slack_signature.to_s)
-      Rails.logger.warn "❌ Slack signature verification failed"
-      render json: { error: "Invalid signature" }, status: :unauthorized
-      return false
-    end
-
-    Rails.logger.info "✅ Slack request signature verified successfully"
-    request.body.rewind # 次の処理のためにリセット
-    true
+    verifier = SlackSignatureVerifier.new(skip_in_development: true)
+    verifier.verify(request)
+  rescue SlackSignatureError => e
+    Rails.logger.warn "❌ Slack request verification failed: #{e.message}"
+    render json: { error: e.message }, status: :unauthorized
+    false
   end
 
   def parse_payload
@@ -94,45 +67,25 @@ class SlackActionsController < ApplicationController
   end
 
   def handle_action(payload)
-    action = payload["actions"]&.first
-    return render_unknown_action unless action
+    handler = SlackActionHandler.new
+    result = handler.handle(payload)
     
-    Rails.logger.info "Handling Slack action: #{action["action_id"]}"
-    
-    visit_id = action["value"].to_i
-    visit = Visit.find(visit_id)
-    
-    # 既に応答済みの場合は処理しない
-    if visit.responded?
-      Rails.logger.warn "Visit ##{visit_id} already responded"
-      render json: { text: "既に応答済みです" }
-      return
-    end
-    
-    responder = extract_responder_name(payload)
-    
-    case action["action_id"]
-    when AppConfig::Slack::ACTION_GOING_NOW
-      update_visit_status(visit, :going_now, responder)
-    when AppConfig::Slack::ACTION_WAITING
-      update_visit_status(visit, :waiting, responder)
-    when AppConfig::Slack::ACTION_NO_MATCH
-      update_visit_status(visit, :no_match, responder)
-    else
-      render_unknown_action
-    end
-  end
-
-  def update_visit_status(visit, status, responder)
-    responded_at = Time.current
-    visit.update!(status: status)
-    
-    # Slackメッセージを更新
-    notifier = SlackNotifier.new
-    notifier.update_message(visit, responder: responder, responded_at: responded_at)
-    
-    Rails.logger.info "Visit ##{visit.id} status updated to #{status} by #{responder}"
-    render json: { text: "✓ #{status_text(status)}" }
+    render json: { text: "✓ #{result[:status_text]}" }
+  rescue SlackActionError => e
+    Rails.logger.warn "Unknown Slack action: #{e.message}"
+    render json: { text: "不明なアクション" }
+  rescue SlackPayloadError => e
+    Rails.logger.error "Invalid payload: #{e.message}"
+    render json: { text: e.message }, status: :bad_request
+  rescue VisitNotFoundError => e
+    Rails.logger.error "Visit not found: #{e.message}"
+    render json: { text: e.message }, status: :not_found
+  rescue VisitAlreadyRespondedError
+    Rails.logger.warn "Visit already responded"
+    render json: { text: "既に応答済みです" }
+  rescue VisitStatusUpdateError => e
+    Rails.logger.error "Visit status update failed: #{e.message}"
+    render json: { text: "ステータスの更新に失敗しました" }, status: :internal_server_error
   end
 
   def extract_responder_name(payload)
@@ -142,19 +95,6 @@ class SlackActionsController < ApplicationController
     # SlackユーザーIDからユーザー名を取得（簡易版）
     # 実際にはSlack APIでユーザー情報を取得する方が正確
     username || user_id || "不明なユーザー"
-  end
-
-  def status_text(status)
-    case status
-    when :going_now
-      "すぐ行きます"
-    when :waiting
-      "お待ちいただく"
-    when :no_match
-      "心当たりがない"
-    else
-      "確認済み"
-    end
   end
 
   def render_unknown_action

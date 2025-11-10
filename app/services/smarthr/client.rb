@@ -8,8 +8,8 @@ module Smarthr
     BASE_URL = "https://api.smarthr.jp/v1"
 
     def initialize(subdomain: nil, access_token: nil)
-      @subdomain = subdomain || ENV["SMARTHR_SUBDOMAIN"]
-      @access_token = access_token || ENV["SMARTHR_ACCESS_TOKEN"]
+      @subdomain = subdomain || AppConfig::SmartHR.subdomain
+      @access_token = access_token || AppConfig::SmartHR.access_token
 
       validate_configuration!
     end
