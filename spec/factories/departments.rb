@@ -1,5 +1,6 @@
 FactoryBot.define do
   factory :department do
-    name { "MyString" }
+    sequence(:name) { |n| "部署#{n}" }
+    position { 0 }
   end
 end

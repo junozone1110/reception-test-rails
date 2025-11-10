@@ -5,7 +5,7 @@ class EmployeesController < ApplicationController
                         .includes(:department)
                         .by_department(params[:department_id])
                         .search(params[:q])
-                        .order(:name)
+                        .ordered
     
     @departments = Department.ordered
   end

@@ -87,6 +87,10 @@ GEM
     concurrent-ruby (1.3.5)
     connection_pool (2.5.4)
     crass (1.0.6)
+    database_cleaner-active_record (2.2.2)
+      activerecord (>= 5.a)
+      database_cleaner-core (~> 2.0)
+    database_cleaner-core (2.0.1)
     date (3.4.1)
     debug (1.11.0)
       irb (~> 1.10)
@@ -226,6 +230,8 @@ GEM
     raabro (1.4.0)
     racc (1.8.1)
     rack (3.2.2)
+    rack-attack (6.8.0)
+      rack (>= 1.0, < 4)
     rack-session (2.1.1)
       base64 (>= 0.1.0)
       rack (>= 3.0.0)
@@ -319,6 +325,8 @@ GEM
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
+    shoulda-matchers (7.0.1)
+      activesupport (>= 7.1)
     slack-ruby-client (3.0.0)
       faraday (>= 2.0.1)
       faraday-mashify
@@ -404,6 +412,7 @@ DEPENDENCIES
   bcrypt (~> 3.1.7)
   bootsnap
   brakeman
+  database_cleaner-active_record (~> 2.2)
   debug
   dotenv-rails
   factory_bot_rails
@@ -416,9 +425,11 @@ DEPENDENCIES
   mysql2 (~> 0.5)
   propshaft
   puma (>= 5.0)
+  rack-attack
   rails (~> 8.0.2)
   rspec-rails (~> 6.0)
   rubocop-rails-omakase
+  shoulda-matchers (~> 7.0)
   slack-ruby-client
   solid_cable
   solid_cache

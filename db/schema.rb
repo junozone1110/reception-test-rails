@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_09_073128) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_080934) do
   create_table "admin_users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "email", null: false
     t.string "password_digest", null: false
@@ -40,8 +40,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_09_073128) do
     t.datetime "updated_at", null: false
     t.string "smarthr_id"
     t.boolean "visible_to_visitors", default: false, null: false
+    t.index ["department_id", "is_active"], name: "idx_employees_on_dept_active"
     t.index ["department_id"], name: "index_employees_on_department_id"
     t.index ["email"], name: "index_employees_on_email", unique: true
+    t.index ["is_active", "visible_to_visitors", "department_id", "name"], name: "idx_employees_for_visitor_search"
+    t.index ["is_active", "visible_to_visitors"], name: "idx_employees_on_active_visible"
     t.index ["slack_user_id"], name: "index_employees_on_slack_user_id", unique: true
     t.index ["smarthr_id"], name: "index_employees_on_smarthr_id", unique: true
     t.index ["visible_to_visitors"], name: "index_employees_on_visible_to_visitors"
@@ -65,7 +68,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_09_073128) do
     t.string "slack_message_ts"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["employee_id", "created_at"], name: "idx_visits_on_employee_created"
     t.index ["employee_id"], name: "index_visits_on_employee_id"
+    t.index ["slack_message_ts"], name: "index_visits_on_slack_message_ts", unique: true
+    t.index ["status", "created_at"], name: "idx_visits_on_status_created"
     t.index ["status"], name: "index_visits_on_status"
   end
 

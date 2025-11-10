@@ -12,66 +12,39 @@ class Visit < ApplicationRecord
   validates :status, presence: true
   validates :employee, presence: true
 
+  # ステータステキストのマッピング（定数化）
+  STATUS_TEXTS = {
+    "pending" => "確認待ち",
+    "going_now" => "すぐ行きます",
+    "waiting" => "お待ちいただく",
+    "no_match" => "心当たりがない"
+  }.freeze
+
   # スコープ
   scope :recent, -> { order(created_at: :desc) }
   scope :today, -> { where("created_at >= ?", Time.zone.now.beginning_of_day) }
   scope :this_week, -> { where("created_at >= ?", Time.zone.now.beginning_of_week) }
+  scope :responded, -> { where.not(status: :pending) }
 
-  # ステータス確認メソッド
-  def pending?
-    status == "pending"
-  end
-
-  def going_now?
-    status == "going_now"
-  end
-
-  def waiting?
-    status == "waiting"
-  end
-
-  def no_match?
-    status == "no_match"
-  end
+  # enumが自動生成するメソッド（status_pending?, status_going_now?など）を使用
+  # 重複したメソッド定義は削除
 
   def responded?
-    !pending?
+    !status_pending?
+  end
+
+  # ステータスの表示テキストを返す
+  def status_text
+    STATUS_TEXTS.fetch(status, "確認済み")
+  end
+
+  # クラスメソッドとしても使用可能にする（後方互換性のため）
+  def self.status_text_for(status_value)
+    STATUS_TEXTS.fetch(status_value.to_s, "確認済み")
   end
 
   # 表示用メソッド
   def formatted_created_at
     created_at.strftime("%Y年%m月%d日 %H:%M")
-  end
-
-  # ステータスの表示テキストを返す
-  def status_text
-    case status
-    when "going_now"
-      "すぐ行きます"
-    when "waiting"
-      "お待ちいただく"
-    when "no_match"
-      "心当たりがない"
-    when "pending"
-      "確認待ち"
-    else
-      "確認済み"
-    end
-  end
-
-  # クラスメソッドとしても使用可能にする（後方互換性のため）
-  def self.status_text_for(status_value)
-    case status_value.to_s
-    when "going_now"
-      "すぐ行きます"
-    when "waiting"
-      "お待ちいただく"
-    when "no_match"
-      "心当たりがない"
-    when "pending"
-      "確認待ち"
-    else
-      "確認済み"
-    end
   end
 end
