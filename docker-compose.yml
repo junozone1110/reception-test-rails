@@ -9,26 +9,38 @@ services:
       MYSQL_DATABASE: reception_rails_development
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
-    build: .
-    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails db:create && bundle exec rails db:migrate && bundle exec rails s -b 0.0.0.0"
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails db:create db:migrate && bundle exec rails s -b 0.0.0.0"
     volumes:
-      - .:/app
+      - .:/rails
       - bundle_data:/usr/local/bundle
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: mysql2://root:password@db:3306/reception_rails_development
       RAILS_ENV: development
-      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
-      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET}
+      BUNDLE_WITHOUT: ""
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
+      SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID:-}
+      SMARTHR_SUBDOMAIN: ${SMARTHR_SUBDOMAIN:-}
+      SMARTHR_ACCESS_TOKEN: ${SMARTHR_ACCESS_TOKEN:-}
     stdin_open: true
     tty: true
 

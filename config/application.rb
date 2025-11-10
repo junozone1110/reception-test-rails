@@ -38,6 +38,9 @@ module ReceptionRails
     config.i18n.available_locales = [:ja, :en]
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # エラークラスを明示的にロード
+    require_relative "../app/errors/application_errors"
+
     # Don't generate system test files.
     config.generators.system_tests = nil
     
