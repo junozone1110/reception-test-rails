@@ -6,7 +6,11 @@ Rails.application.routes.draw do
   root "employees#index"
   
   resources :employees, only: [:index]
-  resources :visits, only: [:new, :create]
+  resources :visits, only: [:new, :create] do
+    member do
+      get :status
+    end
+  end
   get "complete", to: "visits#complete"
 
   # Slack webhook

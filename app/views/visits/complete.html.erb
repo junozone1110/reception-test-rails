@@ -1,20 +1,45 @@
 <div class="max-w-2xl mx-auto">
   <div class="bg-white rounded-lg shadow-md p-12 text-center">
     <div class="mb-6">
-      <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      <div id="status-icon" class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-500">
+        <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
       </div>
       <h1 class="text-3xl font-bold text-gray-900 mb-2">送信完了</h1>
       <p class="text-gray-600 text-lg">担当者にSlackで通知を送信しました</p>
     </div>
 
-    <div class="bg-blue-50 rounded-lg p-6 mb-8">
+    <!-- ステータス表示エリア -->
+    <div id="status-message" class="bg-blue-50 rounded-lg p-6 mb-8">
       <p class="text-gray-700">
         しばらくお待ちください。<br>
         担当者が確認次第、対応いたします。
       </p>
+    </div>
+
+    <!-- 通知エリア（初期は非表示） -->
+    <div id="notification-area" class="hidden mb-8">
+      <div id="notification-card" class="relative overflow-hidden bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-8 shadow-2xl transform transition-all duration-500 scale-100">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+        
+        <div class="relative z-10">
+          <div class="flex items-center justify-center mb-6">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mr-4 shadow-lg">
+              <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-white drop-shadow-lg" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">担当者からの返信</h2>
+          </div>
+          
+          <div class="bg-white rounded-lg p-6 shadow-lg">
+            <p id="notification-text" class="text-2xl text-gray-800 font-bold mb-3"></p>
+            <p id="notification-time" class="text-sm text-gray-600"></p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <%= link_to "トップに戻る", 
@@ -22,4 +47,149 @@
         class: "inline-block px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold" %>
   </div>
 </div>
+
+<% if @visit %>
+<script>
+  (function() {
+    const visitId = <%= @visit.id %>;
+    let currentStatus = '<%= @visit.status %>';
+    let pollInterval;
+    let hasShownNotification = false;
+
+    function updateStatus() {
+      fetch(`/visits/${visitId}/status`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            console.error('Error:', data.error);
+            stopPolling();
+            return;
+          }
+
+          if (data.status !== currentStatus && data.responded) {
+            currentStatus = data.status;
+            showNotification(data.status_text, data.updated_at);
+            stopPolling();
+          }
+        })
+        .catch(error => {
+          console.error('Status check failed:', error);
+        });
+    }
+
+    function showNotification(statusText, updatedAt) {
+      if (hasShownNotification) return;
+      hasShownNotification = true;
+
+      const statusIcon = document.getElementById('status-icon');
+      const statusMessage = document.getElementById('status-message');
+      const notificationArea = document.getElementById('notification-area');
+      const notificationCard = document.getElementById('notification-card');
+      const notificationText = document.getElementById('notification-text');
+      const notificationTime = document.getElementById('notification-time');
+
+      // ステータスアイコンを更新（アニメーション付き）
+      statusIcon.className = 'w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-500 animate-bounce';
+      statusIcon.innerHTML = `
+        <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      `;
+
+      // ステータスメッセージを非表示
+      statusMessage.classList.add('hidden');
+
+      // 通知テキストを設定
+      notificationText.textContent = `「${statusText}」`;
+      const date = new Date(updatedAt);
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      notificationTime.textContent = `${hours}時${minutes}分に返信`;
+
+      // 通知エリアを表示（アニメーション付き）
+      notificationArea.classList.remove('hidden');
+      
+      // アニメーション効果
+      setTimeout(() => {
+        notificationCard.classList.add('scale-105');
+        setTimeout(() => {
+          notificationCard.classList.remove('scale-105');
+        }, 200);
+      }, 100);
+
+      // ページ上部にスクロール（通知が見えるように）
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // 通知音（より目立つ音）
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 2つの音を連続で再生
+        function playTone(frequency, duration, delay) {
+          setTimeout(() => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+          }, delay);
+        }
+        
+        playTone(800, 0.3, 0);
+        playTone(1000, 0.3, 300);
+      } catch (e) {
+        // 音声再生がサポートされていない場合は無視
+      }
+
+      // ブラウザ通知（オプション）
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('担当者からの返信', {
+          body: `「${statusText}」と返信がありました`,
+          icon: '/icon.png',
+          tag: 'visit-response'
+        });
+      } else if ('Notification' in window && Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification('担当者からの返信', {
+              body: `「${statusText}」と返信がありました`,
+              icon: '/icon.png',
+              tag: 'visit-response'
+            });
+          }
+        });
+      }
+    }
+
+    function startPolling() {
+      // 3秒ごとにステータスを確認
+      pollInterval = setInterval(updateStatus, 3000);
+    }
+
+    function stopPolling() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    // ページ読み込み時にポーリング開始
+    if (currentStatus === 'pending') {
+      startPolling();
+    }
+
+    // ページを離れる際にポーリング停止
+    window.addEventListener('beforeunload', stopPolling);
+  })();
+</script>
+<% end %>
 
