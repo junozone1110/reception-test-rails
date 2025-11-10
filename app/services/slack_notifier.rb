@@ -6,7 +6,7 @@ class SlackNotifier
 
   def initialize
     validate_configuration!
-    @client = ::Slack::Web::Client.new(token: ENV["SLACK_BOT_TOKEN"])
+    @client = ::Slack::Web::Client.new(token: AppConfig::Slack.bot_token)
   end
 
   def notify_visit(visit)
@@ -53,17 +53,17 @@ class SlackNotifier
   private
 
   def validate_configuration!
-    unless ENV["SLACK_BOT_TOKEN"].present?
+    unless AppConfig::Slack.bot_token?
       raise NotConfiguredError, "SLACK_BOT_TOKEN is not configured"
     end
     
-    unless ENV["SLACK_CHANNEL_ID"].present?
+    unless AppConfig::Slack.channel_id?
       raise NotConfiguredError, "SLACK_CHANNEL_ID is not configured"
     end
   end
 
   def get_channel_id
-    ENV["SLACK_CHANNEL_ID"]
+    AppConfig::Slack.channel_id
   end
 
   def send_message_to_channel(message_builder)

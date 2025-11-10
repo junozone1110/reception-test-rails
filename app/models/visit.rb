@@ -42,4 +42,36 @@ class Visit < ApplicationRecord
   def formatted_created_at
     created_at.strftime("%Y年%m月%d日 %H:%M")
   end
+
+  # ステータスの表示テキストを返す
+  def status_text
+    case status
+    when "going_now"
+      "すぐ行きます"
+    when "waiting"
+      "お待ちいただく"
+    when "no_match"
+      "心当たりがない"
+    when "pending"
+      "確認待ち"
+    else
+      "確認済み"
+    end
+  end
+
+  # クラスメソッドとしても使用可能にする（後方互換性のため）
+  def self.status_text_for(status_value)
+    case status_value.to_s
+    when "going_now"
+      "すぐ行きます"
+    when "waiting"
+      "お待ちいただく"
+    when "no_match"
+      "心当たりがない"
+    when "pending"
+      "確認待ち"
+    else
+      "確認済み"
+    end
+  end
 end
